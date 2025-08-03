@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// User model: Designed for username/password authentication
+model User {
+  id        String    @id @default(cuid())
+  username  String    @unique // For login
+  phone     String?   // For registration, optional
+  password  String    // Will store the hashed password
+  name      String?
+  image     String?
+  email     String?   @unique // Keep for potential future use (e.g., password reset)
+  
+  posts     Post[]
+  comments  Comment[]
+}
+
+// Post model: Represents the posts created by users.
+model Post {
+  id        String    @id @default(cuid())
+  title     String
+  content   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  author    User      @relation(fields: [authorId], references: [id])
+  authorId  String
+  
+  // This relation is now correctly restored.
+  comments  Comment[]
+  claps     Clap[]
+}
+
+// Comment model: Represents comments on posts.
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  
+  // This rule tells the database to delete this comment if the post it belongs to is deleted.
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+}
+
+// Clap model: Represents a "clap" or "like" on a post.
+model Clap {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  
+  // This rule tells the database to delete this clap if the post it belongs to is deleted.
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+}
